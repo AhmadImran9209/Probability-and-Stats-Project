@@ -1,0 +1,111 @@
+import tkinter as tk
+from tkinter import ttk
+from tkinter import messagebox
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+class TitanicDataVisualizerApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Titanic Data Visualizer")
+
+        # Load and clean data
+        self.titanic_data = self.load_data()
+        self.clean_data()
+
+        # Create tabs
+        self.notebook = ttk.Notebook(root)
+        self.create_age_tab()
+        self.create_class_tab()
+        self.create_gender_tab()
+        self.create_embarked_tab()
+        self.create_fare_tab()
+        self.create_survival_by_class_tab()
+
+        # Pack notebook
+        self.notebook.pack(expand=True, fill="both")
+
+    def load_data(self):
+        try:
+            titanic_data = pd.read_csv("./test.csv")
+            return titanic_data
+        except FileNotFoundError:
+            messagebox.showerror("File Not Found", "The 'test.csv' file was not found.")
+            self.root.destroy()
+
+    def clean_data(self):
+        self.titanic_data.dropna(subset=['Pclass', 'Sex', 'Age', 'SibSp', 'Parch', 'Fare', 'Embarked'], inplace=True)
+        self.titanic_data['Sex'] = self.titanic_data['Sex'].map({'male': 0, 'female': 1})
+        self.titanic_data['Embarked'] = self.titanic_data['Embarked'].map({'S': 0, 'C': 1, 'Q': 2})
+
+    def create_tab(self, title, plot_function):
+        tab = ttk.Frame(self.notebook)
+        self.notebook.add(tab, text=title)
+
+        # Plot on the tab
+        fig, ax = plt.subplots(figsize=(8, 5))
+        plot_function(ax)
+        canvas = FigureCanvasTkAgg(fig, master=tab)
+        canvas.draw()
+        canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+
+    def create_age_tab(self):
+        def plot_age(ax):
+            sns.histplot(self.titanic_data['Age'], bins=20, kde=True, ax=ax)
+            ax.set_xlabel("Age")
+            ax.set_ylabel("Count")
+            ax.set_title("Age Distribution")
+
+        self.create_tab("Age Distribution", plot_age)
+
+    def create_class_tab(self):
+        def plot_class(ax):
+            sns.countplot(x='Pclass', data=self.titanic_data, palette='Set2', ax=ax)
+            ax.set_xlabel("Pclass")
+            ax.set_ylabel("Count")
+            ax.set_title("Passenger Class Distribution")
+
+        self.create_tab("Passenger Class Distribution", plot_class)
+
+    def create_gender_tab(self):
+        def plot_gender(ax):
+            sns.countplot(x='Sex', data=self.titanic_data, palette='Set1', ax=ax)
+            ax.set_xlabel("Sex")
+            ax.set_ylabel("Count")
+            ax.set_title("Gender Distribution")
+
+        self.create_tab("Gender Distribution", plot_gender)
+
+    def create_embarked_tab(self):
+        def plot_embarked(ax):
+            sns.countplot(x='Embarked', data=self.titanic_data, palette='viridis', ax=ax)
+            ax.set_xlabel("Embarked")
+            ax.set_ylabel("Count")
+            ax.set_title("Embarked Port Distribution")
+
+        self.create_tab("Embarked Port Distribution", plot_embarked)
+
+    def create_fare_tab(self):
+        def plot_fare(ax):
+            sns.histplot(self.titanic_data['Fare'], bins=30, kde=True, ax=ax)
+            ax.set_xlabel("Fare")
+            ax.set_ylabel("Count")
+            ax.set_title("Fare Distribution")
+
+        self.create_tab("Fare Distribution", plot_fare)
+
+    def create_survival_by_class_tab(self):
+        def plot_survival_by_class(ax):
+            sns.countplot(x='Pclass', hue='Survived', data=self.titanic_data, palette='coolwarm', ax=ax)
+            ax.set_xlabel("Pclass")
+            ax.set_ylabel("Count")
+            ax.set_title("Survival by Passenger Class")
+
+        self.create_tab("Survival by Class", plot_survival_by_class)
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = TitanicDataVisualizerApp(root)
+    root.mainloop()
